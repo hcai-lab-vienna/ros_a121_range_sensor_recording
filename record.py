@@ -2,9 +2,9 @@
 # pyright: reportPrivateImportUsage=false, reportArgumentType=false, reportCallIssue=false
 # pyright: reportAttributeAccessIssue=false
 
-from time import sleep
-from pathlib import Path
 import os
+from pathlib import Path
+from time import sleep
 
 import acconeer.exptool as et
 from acconeer.exptool import a121
