@@ -3,6 +3,7 @@
 # pyright: reportAttributeAccessIssue=false
 
 from time import sleep
+from pathlib import Path
 
 import acconeer.exptool as et
 from acconeer.exptool import a121
@@ -20,6 +21,9 @@ def main():
     parser.add_argument("--output-file", required=False, default="out.h5")
     args = parser.parse_args()
     et.utils.config_logging(args)
+
+    if Path(args.output_file).exists():
+        raise FileExistsError(args.output_file)
 
     client = None
     while client is None:
