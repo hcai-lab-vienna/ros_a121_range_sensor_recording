@@ -1,8 +1,7 @@
+#!/usr/bin/env python3
 # pyright: reportPrivateImportUsage=false, reportArgumentType=false, reportCallIssue=false
 
 
-import os
-from pathlib import Path
 from time import sleep
 
 import acconeer.exptool as et
@@ -42,22 +41,13 @@ def session_config():
             ),
         ],
     )
-    return a121.SessionConfig(
-        [
-            {
-                sensor_id: sensor_config,
-            }
-        ],
-        extended=True,
-    )
+    return a121.SessionConfig([{sensor_id: sensor_config}], extended=True)
 
 
 def main():
     parser = a121.ExampleArgumentParser()
     parser.add_argument("--output-file", required=False, default="out.h5")
     args = parser.parse_args()
-    while Path(args.output_file).exists():
-        os.remove(args.output_file)
     et.utils.config_logging(args)
 
     client = None
