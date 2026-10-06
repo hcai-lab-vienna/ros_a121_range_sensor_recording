@@ -157,6 +157,7 @@ class PGUpdater:
         self.history.pop(0)
         if len(d.estimated_distances) != 0:
             self.history.append(d.estimated_distances[0])
+            print(f"{d.estimated_distances[0]*100:.2f} cm")
         else:
             self.history.append(np.nan)
 
