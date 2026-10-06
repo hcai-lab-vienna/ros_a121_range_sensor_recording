@@ -100,7 +100,7 @@ def main():
         while not interrupt_handler.got_signal:
             extended_result = client.get_next()
             processed_data = distance_processor.process(extended_result)
-            client.get_next()
+            print(processed_data)
         print("Disconnecting...")
         client.stop_session()
 
