@@ -18,11 +18,7 @@ from serial.serialutil import SerialException
 
 
 def force_start_client(args):
-    if Path(args.output_file).exists():
-        os.remove(args.output_file)
-
-    client = None
-    while client is None:
+    while True:
         try:
             return a121.Client.open(**a121.get_client_args(args))
         except (SerialException, LinkError) as e:
@@ -66,6 +62,8 @@ def main():
 
     client.setup_session(session_config)
 
+    if Path(args.output_file).exists():
+        os.remove(args.output_file)
     with a121.H5Recorder(args.output_file, client):
         client.start_session()
         interrupt_handler = et.utils.ExampleInterruptHandler()

@@ -24,12 +24,8 @@ from acconeer.exptool.a121.algo.distance import (
 from serial.serialutil import SerialException
 
 
-def force_start_client(args) -> a121.Client:
-    if Path(args.output_file).exists():
-        os.remove(args.output_file)
-
-    client = None
-    while client is None:
+def force_start_client(args):
+    while True:
         try:
             return a121.Client.open(**a121.get_client_args(args))
         except (SerialException, LinkError) as e:
