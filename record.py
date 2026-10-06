@@ -1,4 +1,4 @@
-# pyright: reportPrivateImportUsage=false, reportArgumentType=false
+# pyright: reportPrivateImportUsage=false, reportArgumentType=false, reportCallIssue=false
 
 
 import os
@@ -34,7 +34,7 @@ def session_config():
                 hwaas=8,
                 profile=Profile.PROFILE_3,
                 receiver_gain=16,
-                _prf=PRF.PRF_15_6_MHz,
+                prf=PRF.PRF_15_6_MHz,
                 enable_tx=True,
                 enable_loopback=False,
                 phase_enhancement=False,
