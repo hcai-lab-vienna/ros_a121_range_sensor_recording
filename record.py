@@ -4,6 +4,7 @@
 
 from time import sleep
 from pathlib import Path
+import os
 
 import acconeer.exptool as et
 from acconeer.exptool import a121
@@ -23,7 +24,7 @@ def main():
     et.utils.config_logging(args)
 
     if Path(args.output_file).exists():
-        raise FileExistsError(args.output_file)
+        os.remove(args.output_file)
 
     client = None
     while client is None:
