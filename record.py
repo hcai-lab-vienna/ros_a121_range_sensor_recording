@@ -17,24 +17,26 @@ from acconeer.exptool.a121._core.entities.configs.config_enums import (
 from serial.serialutil import SerialException
 
 
-def main():
-    parser = a121.ExampleArgumentParser()
-    parser.add_argument("--output-file", required=False, default="out.h5")
-    args = parser.parse_args()
-    et.utils.config_logging(args)
-
+def force_start_client(args):
     if Path(args.output_file).exists():
         os.remove(args.output_file)
 
     client = None
     while client is None:
         try:
-            client = a121.Client.open(**a121.get_client_args(args))
+            return a121.Client.open(**a121.get_client_args(args))
         except (SerialException, LinkError) as e:
             print(e)
             sleep(1)
-        else:
-            break
+
+
+def main():
+    parser = a121.ExampleArgumentParser()
+    parser.add_argument("--output-file", required=False, default="out.h5")
+    args = parser.parse_args()
+    et.utils.config_logging(args)
+
+    client = force_start_client(args)
 
     sensor_id = 1
     subsweep_config = a121.SubsweepConfig(

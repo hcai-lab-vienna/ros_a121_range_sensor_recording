@@ -4,14 +4,16 @@
 # pyright: reportPrivateImportUsage=false, reportArgumentType=false, reportCallIssue=false
 # pyright: reportAttributeAccessIssue=false
 
-from __future__ import annotations
-
 import copy
+import os
+from pathlib import Path
+from time import sleep
 
 import acconeer.exptool as et
 import numpy as np
 import pyqtgraph as pg
 from acconeer.exptool import a121
+from acconeer.exptool._core.communication.links.buffered_link import LinkError
 from acconeer.exptool.a121.algo.distance import (
     Processor,
     ProcessorConfig,
@@ -19,13 +21,27 @@ from acconeer.exptool.a121.algo.distance import (
     ThresholdMethod,
     calculate_bg_noise_std,
 )
+from serial.serialutil import SerialException
+
+
+def force_start_client(args) -> a121.Client:
+    if Path(args.output_file).exists():
+        os.remove(args.output_file)
+
+    client = None
+    while client is None:
+        try:
+            return a121.Client.open(**a121.get_client_args(args))
+        except (SerialException, LinkError) as e:
+            print(e)
+            sleep(1)
 
 
 def main():
     args = a121.ExampleArgumentParser().parse_args()
     et.utils.config_logging(args)
 
-    client = a121.Client.open(**a121.get_client_args(args))
+    client = force_start_client(args)
 
     # Define sensor configuration.
     sensor_config = a121.SensorConfig(
