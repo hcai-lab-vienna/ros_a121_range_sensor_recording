@@ -5,8 +5,6 @@
 # pyright: reportAttributeAccessIssue=false
 
 import copy
-import os
-from pathlib import Path
 from time import sleep
 
 import acconeer.exptool as et
@@ -83,7 +81,7 @@ def main():
         threshold_sensitivity=0.8,
     )
     distance_processor = Processor(
-        session_config=session_config,
+        sensor_config=sensor_config,
         metadata=metadata,
         processor_config=distance_config,
         context=distance_context,
