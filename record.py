@@ -3,15 +3,7 @@
 # pyright: reportAttributeAccessIssue=false
 
 
-# import copy
-# from acconeer.exptool.a121.algo.distance import (
-#     Processor,
-#     ProcessorConfig,
-#     ProcessorContext,
-#     ThresholdMethod,
-#     calculate_bg_noise_std,
-# )
-
+import copy
 from time import sleep
 
 import acconeer.exptool as et
@@ -21,6 +13,13 @@ from acconeer.exptool.a121._core.entities.configs.config_enums import (
     PRF,
     IdleState,
     Profile,
+)
+from acconeer.exptool.a121.algo.distance import (
+    Processor,
+    ProcessorConfig,
+    ProcessorContext,
+    ThresholdMethod,
+    calculate_bg_noise_std,
 )
 from serial.serialutil import SerialException
 
@@ -67,33 +66,31 @@ def main():
     )
     session_config = a121.SessionConfig([{sensor_id: sensor_config}], extended=True)
 
-    #     # Calibrate noise.
-    #     noise_sensor_config = copy.deepcopy(sensor_config)
-    #     for subsweep in noise_sensor_config.subsweeps:
-    #         subsweep.enable_tx = False
-    #     metadata = client.setup_session(noise_sensor_config)
-    #     client.start_session()
-    #     result = client.get_next()
-    #     client.stop_session()
-    #     stds = [
-    #         calculate_bg_noise_std(subframe, subsweep_config)
-    #         for (subframe, subsweep_config) in zip(
-    #             result.subframes, noise_sensor_config.subsweeps
-    #         )
-    #     ]
-    #     distance_context = ProcessorContext(bg_noise_std=stds)
-    #     distance_config = ProcessorConfig(
-    #         threshold_method=ThresholdMethod.CFAR,
-    #         threshold_sensitivity=0.8
-    #     )
-    #     distance_processor = Processor(
-    #         session_config=session_config,
-    #         metadata=metadata,
-    #         processor_config=distance_config,
-    #         context=distance_context,
-    #     )
-    #
-    #     metadata = client.setup_session(sensor_config)
+    # Calibrate noise.
+    noise_sensor_config = copy.deepcopy(sensor_config)
+    for subsweep in noise_sensor_config.subsweeps:
+        subsweep.enable_tx = False
+    metadata = client.setup_session(noise_sensor_config)
+    client.start_session()
+    result = client.get_next()
+    client.stop_session()
+    stds = [
+        calculate_bg_noise_std(subframe, subsweep_config)
+        for (subframe, subsweep_config) in zip(
+            result.subframes, noise_sensor_config.subsweeps
+        )
+    ]
+    distance_context = ProcessorContext(bg_noise_std=stds)
+    distance_config = ProcessorConfig(
+        threshold_method=ThresholdMethod.CFAR,
+        threshold_sensitivity=0.8
+    )
+    distance_processor = Processor(
+        session_config=session_config,
+        metadata=metadata,
+        processor_config=distance_config,
+        context=distance_context,
+    )
 
     client.setup_session(session_config)
 
@@ -102,8 +99,8 @@ def main():
         interrupt_handler = et.utils.ExampleInterruptHandler()
         print("Press Ctrl-C to end session")
         while not interrupt_handler.got_signal:
-    #       extended_result = client.get_next()
-    #       processed_data = distance_processor.process(extended_result)
+            extended_result = client.get_next()
+            processed_data = distance_processor.process(extended_result)
             client.get_next()
         print("Disconnecting...")
         client.stop_session()
