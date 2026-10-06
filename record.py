@@ -12,7 +12,6 @@ from acconeer.exptool._core.communication.links.buffered_link import LinkError
 from acconeer.exptool.a121._core.entities.configs.config_enums import (
     PRF,
     IdleState,
-    Profile,
 )
 from acconeer.exptool.a121.algo.distance import (
     Processor,
@@ -42,20 +41,20 @@ def main():
 
     sensor_id = 1
     subsweep_config = a121.SubsweepConfig(
-        start_point=80,
-        num_points=40,
-        step_length=8,
-        hwaas=8,
-        profile=Profile.PROFILE_3,
+        start_point=50,
+        num_points=50,
+        step_length=4,
+        hwaas=32,
+        profile=a121.Profile.PROFILE_1,
         receiver_gain=16,
         prf=PRF.PRF_15_6_MHz,
         enable_tx=True,
         enable_loopback=False,
-        phase_enhancement=False,
-        iq_imbalance_compensation=False,
+        phase_enhancement=True,
+        iq_imbalance_compensation=True,
     )
     sensor_config = a121.SensorConfig(
-        sweeps_per_frame=32,
+        sweeps_per_frame=1,
         sweep_rate=None,
         frame_rate=None,
         inter_sweep_idle_state=IdleState.READY,
