@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # pyright: reportPrivateImportUsage=false, reportArgumentType=false
 
 
