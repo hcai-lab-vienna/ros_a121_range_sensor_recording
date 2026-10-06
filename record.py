@@ -2,12 +2,12 @@
 
 
 import os
-import sys
 from pathlib import Path
 from time import sleep
 
 import acconeer.exptool as et
 from acconeer.exptool import a121
+from acconeer.exptool._core.communication.links.buffered_link import LinkError
 from acconeer.exptool.a121._core.entities.configs.config_enums import (
     PRF,
     IdleState,
@@ -64,12 +64,9 @@ def main():
     while client is None:
         try:
             client = a121.Client.open(**a121.get_client_args(args))
-        except SerialException as e:
+        except (SerialException, LinkError) as e:
             print(e)
             sleep(1)
-        except Exception as e:
-            print(e, f"({type(e)})")
-            sys.exit()
         else:
             break
 
