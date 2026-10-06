@@ -91,6 +91,9 @@ def main():
         context=distance_context,
     )
 
+    processed_data = distance_processor.process(result)
+    print(processed_data)
+
     client.setup_session(session_config)
 
     with a121.H5Recorder(args.output_file, client):
