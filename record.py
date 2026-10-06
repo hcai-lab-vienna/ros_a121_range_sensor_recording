@@ -2,6 +2,7 @@
 
 
 import os
+import sys
 from pathlib import Path
 from time import sleep
 
@@ -12,6 +13,7 @@ from acconeer.exptool.a121._core.entities.configs.config_enums import (
     IdleState,
     Profile,
 )
+from serial.serialutil import SerialException
 
 
 def session_config():
@@ -62,9 +64,12 @@ def main():
     while client is None:
         try:
             client = a121.Client.open(**a121.get_client_args(args))
+        except SerialException as e:
+            print(e)
+            sleep(1)
         except Exception as e:
             print(e, f"({type(e)})")
-            sleep(1)
+            sys.exit()
         else:
             break
 
