@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
-# pyright: reportPrivateImportUsage=false, reportArgumentType=false, reportCallIssue=false
+# pyright: reportPrivateImportUsage=false
+# pyright: reportArgumentType=false
+# pyright: reportCallIssue=false
 # pyright: reportAttributeAccessIssue=false
 
 import os
+from copy import deepcopy
 from pathlib import Path
-from time import sleep
+from time import sleep, time
 
 import acconeer.exptool as et
+import numpy as np
 from acconeer.exptool import a121
 from acconeer.exptool._core.communication.links.buffered_link import LinkError
-from acconeer.exptool.a121._core.entities.configs.config_enums import (
-    PRF,
-    IdleState,
-    Profile,
+from acconeer.exptool.a121._core.entities.configs.config_enums import Profile
+from acconeer.exptool.a121.algo.distance import (
+    Processor,
+    ProcessorConfig,
+    ProcessorContext,
+    ThresholdMethod,
+    calculate_bg_noise_std,
 )
 from serial.serialutil import SerialException
 
@@ -26,55 +33,124 @@ def force_start_client(args):
             sleep(1)
 
 
+def calibrate_noise(client, sensor_config):
+    noise_sensor_config = deepcopy(sensor_config)
+    for subsweep in noise_sensor_config.subsweeps:
+        subsweep.enable_tx = False
+    metadata = client.setup_session(noise_sensor_config)
+    client.start_session()
+    result = client.get_next()
+    client.stop_session()
+    context = ProcessorContext(
+        bg_noise_std=[
+            calculate_bg_noise_std(subframe, subsweep_config)
+            for (subframe, subsweep_config) in zip(
+                result.subframes, noise_sensor_config.subsweeps
+            )
+        ]
+    )
+    return metadata, context
+
+
 def main():
     parser = a121.ExampleArgumentParser()
     parser.add_argument("--output-file", required=False, default="out.h5")
+    parser.add_argument("--distances-file", required=False, default="distances.csv")
     args = parser.parse_args()
     et.utils.config_logging(args)
 
     client = force_start_client(args)
 
-    sensor_id = 1
     subsweep_config = a121.SubsweepConfig(
-        start_point=80,
-        num_points=40,
-        step_length=8,
-        hwaas=8,
-        profile=Profile.PROFILE_3,
-        receiver_gain=16,
-        prf=PRF.PRF_15_6_MHz,
-        enable_tx=True,
-        enable_loopback=False,
-        phase_enhancement=False,
-        iq_imbalance_compensation=False,
+        start_point=46,
+        num_points=103,
+        step_length=4,
+        hwaas=32,
+        profile=Profile.PROFILE_1,
+        phase_enhancement=True,
+        iq_imbalance_compensation=True,
     )
-    sensor_config = a121.SensorConfig(
-        sweeps_per_frame=32,
-        sweep_rate=None,
-        frame_rate=None,
-        inter_sweep_idle_state=IdleState.READY,
-        inter_frame_idle_state=IdleState.DEEP_SLEEP,
-        continuous_sweep_mode=False,
-        double_buffering=False,
-        subsweeps=[subsweep_config],
-    )
-    session_config = a121.SessionConfig([{sensor_id: sensor_config}], extended=True)
+    sensor_config = a121.SensorConfig(sweeps_per_frame=1, subsweeps=[subsweep_config])
 
-    client.setup_session(session_config)
+    metadata, context = calibrate_noise(client, sensor_config)
+    distance_config = ProcessorConfig(
+        threshold_method=ThresholdMethod.CFAR,
+        threshold_sensitivity=0.8,
+    )
+    distance_processor = Processor(
+        sensor_config=sensor_config,
+        metadata=metadata,
+        processor_config=distance_config,
+        context=context,
+    )
+
+    client.setup_session(sensor_config)
 
     if Path(args.output_file).exists():
         os.remove(args.output_file)
-    with a121.H5Recorder(args.output_file, client):
-        client.start_session()
-        interrupt_handler = et.utils.ExampleInterruptHandler()
-        print("Press Ctrl-C to end session")
-        while not interrupt_handler.got_signal:
-            client.get_next()
-        print("Disconnecting...")
-        client.stop_session()
+    with (
+        a121.H5Recorder(args.output_file, client),
+        open(args.distances_file, "w") as distances_file,
+    ):
+        try:
+            client.start_session()
+            start_time = time()
+            history = [np.nan] * 3
+            interrupt_handler = et.utils.ExampleInterruptHandler()
+            print("Press Ctrl-C to end session")
+            while not interrupt_handler.got_signal:
+                result = deepcopy(client.get_next())
+                distances = distance_processor.process(result).estimated_distances
+                if len(distances) != 0:
+                    for d in distances:  # type: ignore
+                        d *= 100
+                        history.pop(0)
+                        history.append(d)
+                else:
+                    history.pop(0)
+                    history.append(np.nan)
+                mean_value = np.mean(history)
+                if not np.isnan(mean_value):
+                    dt = time() - start_time
+                    distances_file.write(f"{dt},{mean_value}\n")
+        finally:
+            print("Disconnecting...")
+            client.stop_session()
 
     client.close()
 
 
 if __name__ == "__main__":
     main()
+
+    # subsweep_config = a121.SubsweepConfig(
+    #     start_point=80,
+    #     num_points=40,
+    #     step_length=8,
+    #     hwaas=8,
+    #     profile=Profile.PROFILE_3,
+    #     receiver_gain=16,
+    #     prf=PRF.PRF_15_6_MHz,
+    #     enable_tx=True,
+    #     enable_loopback=False,
+    #     phase_enhancement=False,
+    #     iq_imbalance_compensation=False,
+    # )
+    # sensor_config = a121.SensorConfig(
+    #     sweeps_per_frame=32,
+    #     sweep_rate=None,
+    #     frame_rate=None,
+    #     inter_sweep_idle_state=IdleState.READY,
+    #     inter_frame_idle_state=IdleState.DEEP_SLEEP,
+    #     continuous_sweep_mode=False,
+    #     double_buffering=False,
+    #     subsweeps=[subsweep_config],
+    # )
+    # sensor_id = 1
+    # session_config = a121.SessionConfig(
+    #     [
+    #         {sensor_id: sensor_config}
+    #     ],
+    #     extended=True
+    # )
+    # client.setup_session(session_config)
