@@ -37,9 +37,13 @@ class A121Node(Node):
 
 
         parser = a121.ExampleArgumentParser()
-        parser.add_argument("--output-file", required=False, type=str, default=None)
-        parser.add_argument("--bin-size",    required=False, type=int, default=0)
-        # output file extension is .h5
+        parser.add_argument("--output-file", required=False, type=str,   default=None) # output file extension is .h5
+        parser.add_argument("--bin-size",    required=False, type=int,   default=0   )
+        parser.add_argument("--start-point", required=False, type=int,   default=46  )
+        parser.add_argument("--num-points",  required=False, type=int,   default=103 )
+        parser.add_argument("--step-length", required=False, type=int,   default=4   )
+        parser.add_argument("--hwaas",       required=False, type=int,   default=32  )
+        parser.add_argument("--sensitivity", required=False, type=float, default=0.8 )
         args = parser.parse_args()
         if args.serial_port is None:
             args.serial_port = "/dev/ttyACM0"
@@ -51,10 +55,10 @@ class A121Node(Node):
         self.client = self.force_start_client(args)
 
         self.subsweep_config = a121.SubsweepConfig(
-            start_point=46,
-            num_points=103,
-            step_length=4,
-            hwaas=32,
+            start_point=args.start_point,
+            num_points=args.num_points,
+            step_length=args.step_length,
+            hwaas=args.hwaas,
             profile=Profile.PROFILE_1,
             phase_enhancement=True,
             iq_imbalance_compensation=True,
@@ -66,7 +70,7 @@ class A121Node(Node):
         metadata, context = self.calibrate_noise()
         self.distance_config = ProcessorConfig(
             threshold_method=ThresholdMethod.CFAR,
-            threshold_sensitivity=0.8,
+            threshold_sensitivity=args.sensitivity,
         )
         self.distance_processor = Processor(
             sensor_config=self.sensor_config,
@@ -149,13 +153,8 @@ class A121Node(Node):
             distances = self.distance_processor.process(result).estimated_distances
 
             if self.bin_size > 1:
-                if len(distances) != 0:
-                    for d in distances:  # type: ignore
-                        history.pop(0)
-                        history.append(d)
-                else:
-                    history.pop(0)
-                    history.append(np.nan)
+                history.pop(0)
+                history.append(distances[0] if distances else np.nan)
                 mean_value = np.mean(history)
                 if not np.isnan(mean_value):
                     range_msg.range = mean_value
