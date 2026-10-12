@@ -117,6 +117,7 @@ class A121Node(Node):
         return metadata, context
 
     def record_and_start(self):
+        assert self.output_file
         with a121.H5Recorder(self.output_file, self.client):
             self.start()
 
