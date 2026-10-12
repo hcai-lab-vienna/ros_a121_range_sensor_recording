@@ -38,6 +38,7 @@ class A121Node(Node):
 
         parser = a121.ExampleArgumentParser()
         parser.add_argument("--output-file", required=False, default=None)
+        # output file extension is .h5
         args = parser.parse_args()
         if args.serial_port is None:
             args.serial_port = "/dev/ttyACM0"
