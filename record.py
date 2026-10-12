@@ -89,7 +89,9 @@ class A121Node(Node):
         finally:
             print("Disconnecting...")
             self.client.stop_session()
+        print("Dehehehe...")
         self.client.close()
+        print("Dihihihi...")
 
     @staticmethod
     def force_start_client(args):
