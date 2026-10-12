@@ -31,22 +31,23 @@ from std_msgs.msg import Header
 
 
 class A121Node(Node):
-    def __init__(self, sample_size=10):
+    def __init__(self):
         super().__init__("range_node")
         self.range_pub = self.create_publisher(Range, "/range", 10)
-        self.sample_size = sample_size
+
 
         parser = a121.ExampleArgumentParser()
-        parser.add_argument("--output-file", required=False, default=None)
+        parser.add_argument("--output-file", required=False, type=str, default=None)
+        parser.add_argument("--bin-size",    required=False, type=int, default=0)
         # output file extension is .h5
         args = parser.parse_args()
         if args.serial_port is None:
             args.serial_port = "/dev/ttyACM0"
         if args.output_file and Path(args.output_file).exists():
             os.remove(args.output_file)
-        et.utils.config_logging(args)
         self.output_file = args.output_file
-
+        self.bin_size = args.bin_size
+        et.utils.config_logging(args)
         self.client = self.force_start_client(args)
 
         self.subsweep_config = a121.SubsweepConfig(
@@ -124,7 +125,8 @@ class A121Node(Node):
     def start(self):
         self.client.start_session()
         start_time = time()
-        history = [np.nan] * self.sample_size
+        if self.bin_size > 1:
+            history = [np.nan] * self.bin_size
         interrupt_handler = et.utils.ExampleInterruptHandler()
         while not interrupt_handler.got_signal:
             if self.output_file:
@@ -132,14 +134,17 @@ class A121Node(Node):
             else:
                 result = self.client.get_next()
             distances = self.distance_processor.process(result).estimated_distances
-            if len(distances) != 0:
-                for d in distances:  # type: ignore
+            if self.bin_size > 1:
+                if len(distances) != 0:
+                    for d in distances:  # type: ignore
+                        history.pop(0)
+                        history.append(d)
+                else:
                     history.pop(0)
-                    history.append(d)
+                    history.append(np.nan)
+                mean_value = np.mean(history)
             else:
-                history.pop(0)
-                history.append(np.nan)
-            mean_value = np.mean(history)
+                mean_value = np.mean(distances)
             if not np.isnan(mean_value):
                 dt = time() - start_time
                 header_msg = Header()
