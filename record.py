@@ -177,7 +177,9 @@ def main(args=None):
     rclpy.init(args=args)
     node = A121Node()
     rclpy.spin(node)
+    print("dohoho.")
     rclpy.shutdown()
+    print("dahaha.")
 
 
 if __name__ == "__main__":
