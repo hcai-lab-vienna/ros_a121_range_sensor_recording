@@ -31,7 +31,7 @@ from std_msgs.msg import Header
 
 
 class A121Node(Node):
-    def __init__(self, sample_size=5):
+    def __init__(self, sample_size=10):
         super().__init__("range_node")
         self.range_pub = self.create_publisher(Range, "/range", 10)
         self.sample_size = sample_size
