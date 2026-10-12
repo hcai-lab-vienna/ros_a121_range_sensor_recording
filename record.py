@@ -87,7 +87,7 @@ class A121Node(Node):
             else:
                 self.start()
         finally:
-            print("Disconnecting...")
+            print("\nDisconnecting...")
             self.client.stop_session()
         self.client.close()
         rclpy.shutdown()
@@ -102,7 +102,7 @@ class A121Node(Node):
             except (SerialException, LinkError) as e:
                 print(e)
             except KeyboardInterrupt:
-                print("Aborting...")
+                print("\nAborting...")
                 rclpy.shutdown()
                 exit()
 
