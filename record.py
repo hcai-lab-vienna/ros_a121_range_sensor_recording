@@ -143,8 +143,6 @@ class A121Node(Node):
                     history.pop(0)
                     history.append(np.nan)
                 mean_value = np.mean(history)
-            else:
-                mean_value = np.mean(distances)
             if not np.isnan(mean_value):
                 dt = time() - start_time
                 header_msg = Header()
@@ -157,10 +155,16 @@ class A121Node(Node):
                 range_msg.field_of_view = 1.03
                 # sensor FOV: 53° horizontal, 65° vertical
                 # average is used: 59° -> 1.03 rad
-                range_msg.min_range = np.min(history)
-                range_msg.max_range = np.max(history)
-                range_msg.range = mean_value
-                range_msg.variance = np.var(history)
+                if self.bin_size > 1:
+                    range_msg.range = mean_value
+                    range_msg.min_range = np.min(history)
+                    range_msg.max_range = np.max(history)
+                    range_msg.variance = np.var(history)
+                else:
+                    range_msg.range = distances[0] if distances else np.nan
+                    range_msg.min_range = np.min(distances) if distances else np.nan
+                    range_msg.max_range = np.max(distances) if distances else np.nan
+                    range_msg.variance = np.var(distances) if distances else np.nan
                 self.range_pub.publish(range_msg)
 
 
