@@ -90,6 +90,7 @@ class A121Node(Node):
             print("Disconnecting...")
             self.client.stop_session()
         self.client.close()
+        rclpy.shutdown()
         exit() # FIX ME
 
     @staticmethod
@@ -102,7 +103,8 @@ class A121Node(Node):
                 print(e)
             except KeyboardInterrupt:
                 print("Aborting...")
-                exit()
+                rclpy.shutdown()
+                exit() # FIX ME
 
     def calibrate_noise(self):
         noise_sensor_config = deepcopy(self.sensor_config)
