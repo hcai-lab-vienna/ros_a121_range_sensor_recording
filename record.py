@@ -154,6 +154,8 @@ class A121Node(Node):
                 result = self.client.get_next()
             distances = self.distance_processor.process(result).estimated_distances
 
+            # while binning: only the first distance provided by the sensor is used
+            # min, max and var are calculated for the history of the first distances
             if self.bin_size > 1:
                 history.pop(0)
                 history.append(distances[0] if distances else np.nan)
@@ -165,6 +167,9 @@ class A121Node(Node):
                     range_msg.variance = np.var(history)
                     self.range_pub.publish(range_msg)
 
+            # if no binning: min, max and var are calculated by reported distances of the sensor
+            # the sensor can provides multiple distances of returns when there are more objects reflecting
+            # the first distance is usually the better measurement value and also (usually) the shortest distance
             elif distances: # and self.bin_size <= 1
                 range_msg.range = distances[0]
                 range_msg.min_range = np.min(distances)
