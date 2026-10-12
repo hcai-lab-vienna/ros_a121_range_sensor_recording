@@ -128,12 +128,26 @@ class A121Node(Node):
         if self.bin_size > 1:
             history = [np.nan] * self.bin_size
         interrupt_handler = et.utils.ExampleInterruptHandler()
+
         while not interrupt_handler.got_signal:
+            dt = time() - start_time
+            header_msg = Header()
+            header_msg.stamp.sec = sec = int(dt)
+            header_msg.stamp.nanosec = int((dt - sec) * 1e9)
+            header_msg.frame_id = "RADAR"
+            range_msg = Range()
+            range_msg.header = header_msg
+            range_msg.radiation_type = 60
+            range_msg.field_of_view = 1.03
+            # sensor FOV: 53° horizontal, 65° vertical
+            # average is used: 59° -> 1.03 rad
+
             if self.output_file:
                 result = deepcopy(self.client.get_next())
             else:
                 result = self.client.get_next()
             distances = self.distance_processor.process(result).estimated_distances
+
             if self.bin_size > 1:
                 if len(distances) != 0:
                     for d in distances:  # type: ignore
@@ -143,28 +157,18 @@ class A121Node(Node):
                     history.pop(0)
                     history.append(np.nan)
                 mean_value = np.mean(history)
-            if not np.isnan(mean_value):
-                dt = time() - start_time
-                header_msg = Header()
-                header_msg.stamp.sec = sec = int(dt)
-                header_msg.stamp.nanosec = int((dt - sec) * 1e9)
-                header_msg.frame_id = "RADAR"
-                range_msg = Range()
-                range_msg.header = header_msg
-                range_msg.radiation_type = 60
-                range_msg.field_of_view = 1.03
-                # sensor FOV: 53° horizontal, 65° vertical
-                # average is used: 59° -> 1.03 rad
-                if self.bin_size > 1:
+                if not np.isnan(mean_value):
                     range_msg.range = mean_value
                     range_msg.min_range = np.min(history)
                     range_msg.max_range = np.max(history)
                     range_msg.variance = np.var(history)
-                else:
-                    range_msg.range = distances[0] if distances else np.nan
-                    range_msg.min_range = np.min(distances) if distances else np.nan
-                    range_msg.max_range = np.max(distances) if distances else np.nan
-                    range_msg.variance = np.var(distances) if distances else np.nan
+                    self.range_pub.publish(range_msg)
+
+            elif distances: # and self.bin_size <= 1
+                range_msg.range = distances[0]
+                range_msg.min_range = np.min(distances)
+                range_msg.max_range = np.max(distances)
+                range_msg.variance = np.var(distances)
                 self.range_pub.publish(range_msg)
 
 
