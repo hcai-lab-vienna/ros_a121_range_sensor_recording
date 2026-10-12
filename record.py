@@ -37,11 +37,11 @@ class A121Node(Node):
         self.sample_size = sample_size
 
         parser = a121.ExampleArgumentParser()
-        parser.add_argument("--output-file", required=False, default="out.h5")
+        parser.add_argument("--output-file", required=False, default=None)
         args = parser.parse_args()
         if args.serial_port is None:
             args.serial_port = "/dev/ttyACM0"
-        if Path(args.output_file).exists():
+        if args.output_file and Path(args.output_file).exists():
             os.remove(args.output_file)
         et.utils.config_logging(args)
         self.output_file = args.output_file
@@ -76,7 +76,10 @@ class A121Node(Node):
         self.client.setup_session(self.sensor_config)
         print("Press Ctrl-C to end session")
         try:
-            self.start()
+            if self.output_file:
+                self.record_and_start()
+            else:
+                self.start()
         finally:
             print("Disconnecting...")
             self.client.stop_session()
@@ -112,40 +115,43 @@ class A121Node(Node):
         )
         return metadata, context
 
-    def start(self):
+    def record_and_start(self):
         with a121.H5Recorder(self.output_file, self.client):
-            self.client.start_session()
-            start_time = time()
-            history = [np.nan] * self.sample_size
-            interrupt_handler = et.utils.ExampleInterruptHandler()
-            while not interrupt_handler.got_signal:
-                result = deepcopy(self.client.get_next())
-                distances = self.distance_processor.process(result).estimated_distances
-                if len(distances) != 0:
-                    for d in distances:  # type: ignore
-                        history.pop(0)
-                        history.append(d)
-                else:
+            self.start()
+
+    def start(self):
+        self.client.start_session()
+        start_time = time()
+        history = [np.nan] * self.sample_size
+        interrupt_handler = et.utils.ExampleInterruptHandler()
+        while not interrupt_handler.got_signal:
+            result = deepcopy(self.client.get_next())
+            distances = self.distance_processor.process(result).estimated_distances
+            if len(distances) != 0:
+                for d in distances:  # type: ignore
                     history.pop(0)
-                    history.append(np.nan)
-                mean_value = np.mean(history)
-                if not np.isnan(mean_value):
-                    dt = time() - start_time
-                    header_msg = Header()
-                    header_msg.stamp.sec = sec = int(dt)
-                    header_msg.stamp.nanosec = int((dt - sec) * 1e9)
-                    header_msg.frame_id = "RADAR"
-                    range_msg = Range()
-                    range_msg.header = header_msg
-                    range_msg.radiation_type = 60
-                    range_msg.field_of_view = 1.03
-                    # sensor FOV: 53° horizontal, 65° vertical
-                    # average is used: 59° -> 1.03 rad
-                    range_msg.min_range = np.min(history)
-                    range_msg.max_range = np.max(history)
-                    range_msg.range = mean_value
-                    range_msg.variance = np.var(history)
-                    self.range_pub.publish(range_msg)
+                    history.append(d)
+            else:
+                history.pop(0)
+                history.append(np.nan)
+            mean_value = np.mean(history)
+            if not np.isnan(mean_value):
+                dt = time() - start_time
+                header_msg = Header()
+                header_msg.stamp.sec = sec = int(dt)
+                header_msg.stamp.nanosec = int((dt - sec) * 1e9)
+                header_msg.frame_id = "RADAR"
+                range_msg = Range()
+                range_msg.header = header_msg
+                range_msg.radiation_type = 60
+                range_msg.field_of_view = 1.03
+                # sensor FOV: 53° horizontal, 65° vertical
+                # average is used: 59° -> 1.03 rad
+                range_msg.min_range = np.min(history)
+                range_msg.max_range = np.max(history)
+                range_msg.range = mean_value
+                range_msg.variance = np.var(history)
+                self.range_pub.publish(range_msg)
 
 
 def main(args=None):
