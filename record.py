@@ -126,7 +126,10 @@ class A121Node(Node):
         history = [np.nan] * self.sample_size
         interrupt_handler = et.utils.ExampleInterruptHandler()
         while not interrupt_handler.got_signal:
-            result = deepcopy(self.client.get_next())
+            if self.output_file:
+                result = deepcopy(self.client.get_next())
+            else:
+                result = self.client.get_next()
             distances = self.distance_processor.process(result).estimated_distances
             if len(distances) != 0:
                 for d in distances:  # type: ignore
