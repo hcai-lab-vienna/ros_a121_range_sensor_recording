@@ -3,9 +3,47 @@
 ./record.py --output-file "radaraw_$(date +%Y_%m_%d-%H_%M_%S).h5" &
 ros2 bag record \
     /camera/camera/color/image_raw \
-    /camera/camera/depth \
+    /camera/camera/depth/image_rect_raw \
     /collision_detected \
     /imu \
     /range \
     /raw_bumper_data \
     /rslidar_points
+
+# /camera/camera/color/camera_info
+# /camera/camera/color/image_raw
+# /camera/camera/color/image_raw/compressed
+# /camera/camera/color/image_raw/compressedDepth
+# /camera/camera/color/image_raw/theora
+# /camera/camera/color/image_raw/zstd
+# /camera/camera/depth/camera_info
+# /camera/camera/depth/image_rect_raw
+# /camera/camera/depth/image_rect_raw/compressed
+# /camera/camera/depth/image_rect_raw/compressedDepth
+# /camera/camera/depth/image_rect_raw/theora
+# /camera/camera/depth/image_rect_raw/zstd
+# /camera/camera/infra1/camera_info
+# /camera/camera/infra1/image_rect_raw
+# /camera/camera/infra1/image_rect_raw/compressed
+# /camera/camera/infra1/image_rect_raw/compressedDepth
+# /camera/camera/infra1/image_rect_raw/theora
+# /camera/camera/infra1/image_rect_raw/zstd
+# /camera/camera/infra2/camera_info
+# /camera/camera/infra2/image_rect_raw
+# /camera/camera/infra2/image_rect_raw/compressed
+# /camera/camera/infra2/image_rect_raw/compressedDepth
+# /camera/camera/infra2/image_rect_raw/theora
+# /camera/camera/infra2/image_rect_raw/zstd
+# /clicked_point
+# /collision_detected
+# /events/read_split
+# /events/write_split
+# /goal_pose
+# /imu
+# /initialpose
+# /parameter_events
+# /range
+# /raw_bumper_data
+# /rosout
+# /rslidar_points
+# /tf_static
