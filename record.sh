@@ -1,6 +1,6 @@
 #!/bin/bash
 . .venv/bin/activate
-./record.py --output-file "radaraw_$(date +%Y_%m_%d-%H_%M_%S).h5"
+./record.py --output-file "radaraw_$(date +%Y_%m_%d-%H_%M_%S).h5" &
 ros2 bag record \
     /camera/camera/color/image_raw \
     /camera/camera/depth \
