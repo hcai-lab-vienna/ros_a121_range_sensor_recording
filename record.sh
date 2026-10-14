@@ -8,7 +8,9 @@ ros2 bag record \
     /imu \
     /range \
     /raw_bumper_data \
-    /rslidar_points
+    /rslidar_points \
+    /odom \
+    /tf
 
 # /camera/camera/color/camera_info
 # /camera/camera/color/image_raw
@@ -47,3 +49,12 @@ ros2 bag record \
 # /rosout
 # /rslidar_points
 # /tf_static
+#### SCOUT
+# /cmd_vel
+# /light_control
+# /odom
+# /parameter_events
+# /rc_status
+# /rosout
+# /scout_status
+# /tf
